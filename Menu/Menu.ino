@@ -1,18 +1,16 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_PCD8544.h>
 
+// page Constants
 #define PAGE_MAIN 0
 #define PAGE_SETTINGS 1
 #define PAGE_CONTRAST 2
 #define PAGE_GAMES 3
 
-boolean backlight = true;
+// default values
+boolean backlight = false;
+
 int contrast = 50;
-
-int xPin = A0;
-int yPin = A1;
-int buttonPin = 12;
-
 int menuitem = 1;
 int page = PAGE_MAIN;
 
@@ -20,13 +18,12 @@ volatile boolean up = false;
 volatile boolean down = false;
 volatile boolean middle = false;
 
-int downButtonState = 0;
-int upButtonState = 0;
-int selectButtonState = 0;
-int lastDownButtonState = 0;
-int lastSelectButtonState = 0;
-int lastUpButtonState = 0;
+// joystick pins
+int xPin = A0;
+int yPin = A1;
+int buttonPin = 12;
 
+// lcd pins -> (CLK, DIN, DC, CE, RST) : you may changes them based on your need.
 Adafruit_PCD8544 display = Adafruit_PCD8544(4, 5, 6, 10, 11);
 
 void setup() {
@@ -37,7 +34,7 @@ void setup() {
   pinMode(buttonPin, INPUT_PULLUP);
   pinMode(7, OUTPUT);
 
-  digitalWrite(7, HIGH);  //Turn Backlight ON
+  digitalWrite(7, HIGH);  //Turn Backlight OFF
 
   Serial.begin(9600);
 
@@ -50,20 +47,129 @@ void setup() {
 void loop() {
 
   drawMenu();
+  checkDir();
+  handleDir();
+}
 
-  downButtonState = digitalRead(2);
-  selectButtonState = digitalRead(1);
-  upButtonState = digitalRead(0);
+void handleDir() {
 
-  int yVal = analogRead(yPin);
+  // if up pressed
+  if (up) {
+    up = false;
+
+    switch (page) {
+
+      case PAGE_MAIN:
+        menuitem--;
+        if (menuitem == 0)
+          menuitem = 3;
+        break;
+
+      case PAGE_GAMES:
+        menuitem--;
+        if (menuitem == 0)
+          menuitem = 3;
+        break;
+
+      case PAGE_SETTINGS:
+        menuitem--;
+        if (menuitem == 0)
+          menuitem = 4;
+        break;
+
+      case PAGE_CONTRAST:
+        contrast++;
+        setContrast();
+        break;
+    }
+  }
+
+  // if down pressed
+  if (down) {
+    down = false;
+    switch (page) {
+
+      case PAGE_MAIN:
+        menuitem++;
+        if (menuitem == 4)
+          menuitem = 1;
+        break;
+
+      case PAGE_GAMES:
+        menuitem++;
+        if (menuitem == 4)
+          menuitem = 1;
+        break;
+
+      case PAGE_SETTINGS:
+        menuitem++;
+        if (menuitem == 5)
+          menuitem = 1;
+        break;
+
+      case PAGE_CONTRAST:
+        contrast--;
+        setContrast();
+        break;
+    }
+  }
+
+  // if button pushed
+  if (middle) {
+
+    middle = false;
+
+    if (page == PAGE_MAIN) {
+      if (menuitem == 1) {
+        page = PAGE_GAMES;
+      } else if (menuitem == 2) {
+        //wifi code ------->
+      } else if (menuitem == 3) {
+        page = PAGE_SETTINGS;
+        menuitem = 1;
+      }
+    }
+
+    else if (page == PAGE_GAMES) {
+      if (menuitem == 1) {
+        //2048 codes ------>
+      } else if (menuitem == 2) {
+        //snake codes ------>
+      } else if (menuitem == 3) {
+        page = PAGE_MAIN;
+        menuitem = 1;
+      }
+    }
+
+    else if (page == PAGE_SETTINGS) {
+      if (menuitem == 1) {
+        page = PAGE_CONTRAST;
+      } else if (menuitem == 2) {
+        changeBacklight();
+      } else if (menuitem == 3) {
+        resetDefaults();
+      } else if (menuitem == 4) {
+        page = PAGE_MAIN;
+        menuitem = 1;
+      }
+    }
+
+    else if (page == PAGE_CONTRAST) {
+      page = PAGE_SETTINGS;
+    }
+  }
+}
+
+void checkDir() {
+  int menuDir = analogRead(yPin);
   boolean button = digitalRead(buttonPin);
 
-  if (yVal <= 450) {
+  if (menuDir <= 300) {
     up = true;
     delay(150);
   }
 
-  if (yVal >= 650) {
+  if (menuDir >= 700) {
     down = true;
     delay(150);
   }
@@ -72,142 +178,11 @@ void loop() {
     middle = true;
     delay(150);
   }
-
-  checkIfDownButtonIsPressed();
-  checkIfUpButtonIsPressed();
-  checkIfSelectButtonIsPressed();
-
-  if (up && page == PAGE_MAIN) {
-    up = false;
-    menuitem--;
-    if (menuitem == 0) {
-      menuitem = 3;
-    }
-  } else if (up && page == PAGE_SETTINGS) {
-    up = false;
-    menuitem--;
-    if (menuitem == 0) {
-      menuitem = 4;
-    }
-  } else if (up && page == PAGE_CONTRAST) {
-    up = false;
-    contrast++;
-    setContrast();
-  } else if (up && page == PAGE_GAMES) {
-    up = false;
-    menuitem--;
-    if (menuitem == 0) {
-      menuitem = 3;
-    }
-  }
-
-
-  if (down && page == PAGE_MAIN) {
-    down = false;
-    menuitem++;
-    if (menuitem == 4) {
-      menuitem = 1;
-    }
-  } else if (down && page == PAGE_SETTINGS) {
-    down = false;
-    menuitem++;
-    if (menuitem == 5) {
-      menuitem = 1;
-    }
-  } else if (down && page == PAGE_CONTRAST) {
-    down = false;
-    contrast--;
-    setContrast();
-  } else if (down && page == PAGE_GAMES) {
-    down = false;
-    menuitem++;
-    if (menuitem == 4) {
-      menuitem = 1;
-    }
-  }
-
-
-  if (middle) {
-    middle = false;
-
-    // handle MAIN PAGE
-    if (page == PAGE_MAIN && menuitem == 1) {
-      page = PAGE_GAMES;
-    } else if (page == PAGE_MAIN && menuitem == 2) {
-      //wifi connection
-    } else if (page == PAGE_MAIN && menuitem == 3) {
-      page = PAGE_SETTINGS;
-      menuitem = 1;
-    }
-
-    //handle GAME PAGE
-    else if (page == PAGE_GAMES && menuitem == 1) {
-      //2048 codes
-    } else if (page == PAGE_GAMES && menuitem == 2) {
-      //snake codes
-    } else if (page == PAGE_GAMES && menuitem == 3) {
-      page = PAGE_MAIN;
-      menuitem = 1;
-    }
-
-    else if (page == PAGE_SETTINGS && menuitem == 2) {
-      if (backlight) {
-        backlight = false;
-        turnBacklightOff();
-      } else {
-        backlight = true;
-        turnBacklightOn();
-      }
-    }
-
-    else if (page == PAGE_SETTINGS && menuitem == 3) {
-      resetDefaults();
-    }
-
-    else if (page == PAGE_SETTINGS && menuitem == 1) {
-      page = PAGE_CONTRAST;
-    } else if (page == PAGE_CONTRAST) {
-      page = PAGE_SETTINGS;
-    } else if (page == PAGE_SETTINGS && menuitem == 4) {
-      page = PAGE_MAIN;
-      menuitem = 1;
-    }
-  }
 }
-
-void checkIfDownButtonIsPressed() {
-  if (downButtonState != lastDownButtonState) {
-    if (downButtonState == 0) {
-      down = true;
-    }
-    delay(50);
-  }
-  lastDownButtonState = downButtonState;
-}
-
-void checkIfUpButtonIsPressed() {
-  if (upButtonState != lastUpButtonState) {
-    if (upButtonState == 0) {
-      up = true;
-    }
-    delay(50);
-  }
-  lastUpButtonState = upButtonState;
-}
-
-void checkIfSelectButtonIsPressed() {
-  if (selectButtonState != lastSelectButtonState) {
-    if (selectButtonState == 0) {
-      middle = true;
-    }
-    delay(50);
-  }
-  lastSelectButtonState = selectButtonState;
-}
-
 
 void drawMenu() {
 
+  // mainPageDraw
   if (page == PAGE_MAIN) {
 
     display.setTextSize(1);
@@ -246,6 +221,7 @@ void drawMenu() {
 
   }
 
+  // settingPageDraw
   else if (page == PAGE_SETTINGS) {
     display.setTextSize(1);
     display.clearDisplay();
@@ -296,7 +272,10 @@ void drawMenu() {
     display.display();
 
 
-  } else if (page == PAGE_CONTRAST) {
+  }
+
+  // contrastPageDraw
+  else if (page == PAGE_CONTRAST) {
 
     display.setTextSize(1);
     display.clearDisplay();
@@ -312,7 +291,10 @@ void drawMenu() {
 
     display.setTextSize(2);
     display.display();
-  } else if (page == PAGE_GAMES) {
+  }
+
+  // gamePageDraw
+  else if (page == PAGE_GAMES) {
     display.setTextSize(1);
     display.clearDisplay();
     display.setTextColor(BLACK, WHITE);
@@ -359,6 +341,16 @@ void resetDefaults() {
 void setContrast() {
   display.setContrast(contrast);
   display.display();
+}
+
+void changeBacklight() {
+  if (backlight) {
+    backlight = false;
+    turnBacklightOff();
+  } else {
+    backlight = true;
+    turnBacklightOn();
+  }
 }
 
 void turnBacklightOn() {
