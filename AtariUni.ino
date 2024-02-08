@@ -1,6 +1,10 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_PCD8544.h>
 #include <EEPROM.h>
+#include <SoftwareSerial.h>
+
+SoftwareSerial mySerial(3, 2);
+
 
 // page Constants
 #define PAGE_MAIN 0
@@ -13,6 +17,7 @@
 // default values
 boolean backlight = false;
 boolean isPlaying = false;
+boolean wifiConnected = false;
 
 int contrast = 50;
 int menuitem = 1;
@@ -79,10 +84,12 @@ void setup() {
   pinMode(0, INPUT_PULLUP);
   pinMode(buttonPin, INPUT_PULLUP);
   pinMode(7, OUTPUT);
+  pinMode(13, OUTPUT);
 
   digitalWrite(7, HIGH);  //Turn Backlight OFF
 
   Serial.begin(9600);
+  mySerial.begin(9600);
 
   display.begin();
   display.setContrast(contrast);  //Set contrast to 50
@@ -91,6 +98,24 @@ void setup() {
 }
 
 void loop() {
+
+  if (!wifiConnected) {
+    mySerial.write(-1);
+    turnOffWifi();
+  } else {
+    int wifiState = 0;
+
+    if (mySerial.available()) {
+      wifiState = mySerial.read();
+      // Serial.println(wifiState);
+    }
+
+    if (wifiState == 200) {
+      turnOnWifi();
+    } else {
+      blynkWifi();
+    }
+  }
 
   drawPage();
   if (!isPlaying) {
@@ -218,7 +243,11 @@ void handleMainPage() {
   if (menuitem == 1) {
     page = PAGE_GAMES;
   } else if (menuitem == 2) {
-    //wifi code ------->
+    if (wifiConnected) {
+      wifiConnected = false;
+    } else {
+      wifiConnected = true;
+    }
   } else if (menuitem == 3) {
     page = PAGE_SETTINGS;
     menuitem = 1;
@@ -327,7 +356,12 @@ void drawMainPage() {
   } else {
     display.setTextColor(BLACK, WHITE);
   }
-  display.print(">Wifi:OFF");
+  display.print(">Wifi:");
+  if (wifiConnected) {
+    display.print("ON");
+  } else {
+    display.print("OFF");
+  }
   display.display();
 
   if (menuitem == 3) {
@@ -457,9 +491,11 @@ void draw2048Page() {
     display.print("press button");
     display.display();
 
+
+
     while (digitalRead(buttonPin)) {
     }
-
+    mySerial.write(score);
     page = PAGE_GAMES;
   }
 
@@ -480,6 +516,7 @@ void drawSnakePage() {
     display.clearDisplay();
     display.display();
     show_score();
+
     while (digitalRead(buttonPin)) {
       // while not pressed button, do nothing
     }
@@ -490,6 +527,7 @@ void drawSnakePage() {
     game_over = false;
     snakesize = 6;
     init_snake();
+    mySerial.write(snakesize);
   }
 
   display.clearDisplay();
@@ -1067,4 +1105,19 @@ void input_snake() {
     if (direction_snake != RIGHT_SNAKE)
       direction_snake = LEFT_SNAKE;
   }
+}
+
+void blynkWifi() {
+  digitalWrite(13, HIGH);  // turn the LED on (HIGH is the voltage level)
+  delay(100);              // wait for a second
+  digitalWrite(13, LOW);   // turn the LED off by making the voltage LOW
+  delay(100);
+}
+
+void turnOnWifi() {
+  digitalWrite(13, HIGH);
+}
+
+void turnOffWifi() {
+  digitalWrite(13, LOW);
 }
