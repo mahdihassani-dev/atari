@@ -31,6 +31,7 @@ volatile boolean middle = false;
 int xPin = A0;
 int yPin = A1;
 int buttonPin = 12;
+int ledPin = 9;
 
 // lcd pins -> (CLK, DIN, DC, CE, RST) : you may changes them based on your need.
 Adafruit_PCD8544 display = Adafruit_PCD8544(4, 5, 6, 10, 11);
@@ -44,8 +45,8 @@ bool joystickMove = false;
 int direction_2048;
 
 //defintions for the direction of movement with jostick in 2048 game
-#define UP_2048 2
-#define DOWN_2048 0
+#define UP_2048 0
+#define DOWN_2048 2
 #define LEFT_2048 3
 #define RIGHT_2048 1
 //----------------------------------------------------------
@@ -84,7 +85,7 @@ void setup() {
   pinMode(0, INPUT_PULLUP);
   pinMode(buttonPin, INPUT_PULLUP);
   pinMode(7, OUTPUT);
-  pinMode(13, OUTPUT);
+  pinMode(ledPin, OUTPUT);
 
   digitalWrite(7, HIGH);  //Turn Backlight OFF
 
@@ -129,12 +130,12 @@ void checkDir() {
   boolean button = digitalRead(buttonPin);
 
   if (menuDir <= 300) {
-    up = true;
+    down = true;
     delay(150);
   }
 
   if (menuDir >= 700) {
-    down = true;
+    up = true;
     delay(150);
   }
 
@@ -1025,11 +1026,11 @@ static void movesnake() {
   input_snake();
   int xdirection, ydirection;
   switch (direction_snake) {
-    case DOWN_SNAKE:
+    case UP_SNAKE:
       xdirection = 0;
       ydirection = -1;
       break;
-    case UP_SNAKE:
+    case DOWN_SNAKE:
       xdirection = 0;
       ydirection = 1;
       break;
@@ -1108,16 +1109,16 @@ void input_snake() {
 }
 
 void blynkWifi() {
-  digitalWrite(13, HIGH);  // turn the LED on (HIGH is the voltage level)
-  delay(100);              // wait for a second
-  digitalWrite(13, LOW);   // turn the LED off by making the voltage LOW
+  digitalWrite(ledPin, HIGH);  // turn the LED on (HIGH is the voltage level)
+  delay(100);                  // wait for a second
+  digitalWrite(ledPin, LOW);   // turn the LED off by making the voltage LOW
   delay(100);
 }
 
 void turnOnWifi() {
-  digitalWrite(13, HIGH);
+  digitalWrite(ledPin, HIGH);
 }
 
 void turnOffWifi() {
-  digitalWrite(13, LOW);
+  digitalWrite(ledPin, LOW);
 }
