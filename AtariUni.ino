@@ -31,6 +31,10 @@ volatile boolean middle = false;
 int xPin = A0;
 int yPin = A1;
 int buttonPin = 12;
+
+
+// led and buzzer pins
+int buzzerPin = 8;
 int ledPin = 9;
 
 // lcd pins -> (CLK, DIN, DC, CE, RST) : you may changes them based on your need.
@@ -86,6 +90,7 @@ void setup() {
   pinMode(buttonPin, INPUT_PULLUP);
   pinMode(7, OUTPUT);
   pinMode(ledPin, OUTPUT);
+  pinMode(buzzerPin, OUTPUT);
 
   digitalWrite(7, HIGH);  //Turn Backlight OFF
 
@@ -515,6 +520,9 @@ void drawSnakePage() {
 
   if (game_over) {
     display.clearDisplay();
+    digitalWrite(buzzerPin, HIGH);
+    delay(100);
+    digitalWrite(buzzerPin, Low);
     display.display();
     show_score();
 
