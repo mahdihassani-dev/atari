@@ -350,7 +350,7 @@ void drawMainPage() {
   display.setCursor(0, 15);
 
   if (menuitem == 1) {
-    display.setTextColor(WHITE, BLACK);
+    // display.setTextColor(WHITE, BLACK);
   } else {
     display.setTextColor(BLACK, WHITE);
   }
@@ -358,7 +358,7 @@ void drawMainPage() {
   display.setCursor(0, 25);
 
   if (menuitem == 2) {
-    display.setTextColor(WHITE, BLACK);
+    // display.setTextColor(WHITE, BLACK);
   } else {
     display.setTextColor(BLACK, WHITE);
   }
@@ -371,7 +371,7 @@ void drawMainPage() {
   display.display();
 
   if (menuitem == 3) {
-    display.setTextColor(WHITE, BLACK);
+    // display.setTextColor(WHITE, BLACK);
   } else {
     display.setTextColor(BLACK, WHITE);
   }
